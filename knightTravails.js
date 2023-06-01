@@ -1,11 +1,12 @@
-const Move = (row, col, dist) => {
+const Move = (row, col, dist, path = []) => {
   return {
     row,
     col,
     dist,
     posString() {
       return `${this.row}, ${this.col}`
-    }
+    },
+    path
   }
 }
 const createBoard = (boardSize) => {
@@ -36,7 +37,7 @@ function findPossibleMoves(Pos, offsets) {
       Pos.row += offset[0]
       Pos.col += offset[1]
       if ((Pos.row <= limit && Pos.row >= 1) && (Pos.col <= limit && Pos.col >= 1)) {
-        result.push(Move(Pos.row, Pos.col, Pos.dist + 1))
+        result.push(Move(Pos.row, Pos.col, Pos.dist + 1, Pos.path.concat([Pos])))
       }
       Pos.row -= offset[0]
       Pos.col -= offset[1]
@@ -45,8 +46,13 @@ function findPossibleMoves(Pos, offsets) {
 }
 
 const knightMoves = ([startX, startY], [goalX, goalY]) => {
+  const limit = chessBoard.at(-1).col
+  if (startX > limit || startX < 1 || startY > limit || startY < 1 || goalX > limit || goalX < 1 || goalY > limit || goalY < 1) {
+    console.log('valid inputs are [(1-8), (1-8)], [(1-8), (1-8)]')
+    return
+  }
   const queue = []
-  const startPos = Move(startX, startY, 0)
+  const startPos = Move(startX, startY, 0, [])
   queue.push(startPos)
 
   const visited = new Set()
@@ -56,19 +62,31 @@ const knightMoves = ([startX, startY], [goalX, goalY]) => {
     const move = queue.shift()
     // process move
     if (move.row === goalX && move.col === goalY) {
-      return move.dist
+      let finalPath = []
+      move.path.forEach(move => {
+        finalPath.push(`[${move.row}, ${move.col}]`)
+      })
+      finalPath.push(`[${goalX}, ${goalY}]`)
+      console.log(`The distance from [${startX}, ${startY}] to [${goalX}, ${goalY}] is ${move.dist} moves`)
+      console.log('The moves are:')
+      for (let i = 0; i < finalPath.length; i++) {
+        if (i === finalPath.length-1) {
+          return
+        }
+        console.log(`${finalPath[i]} ==> ${finalPath[i+1]}`)
+      }
+      return
     }
     visited.add(move.posString())
 
     // add neighbours
     const possibleMoves = findPossibleMoves(move, offsets)
-    for (const move of possibleMoves) {
-      if (visited.has(move.posString())) {
+    for (const possibleMove of possibleMoves) {
+      if (visited.has(possibleMove.posString())) {
         continue
       }
-      queue.push(move)
+      queue.push(possibleMove)
     }
   }
 }
-
-console.log(knightMoves([1, 3], [8, 8]))
+knightMoves([8, 1], [7, 5])
